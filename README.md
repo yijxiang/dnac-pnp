@@ -285,7 +285,7 @@ Switch>
 - **pnpserver**.local.domain 指向DNAC服务器IP；
 - local.domain按企业自身的具体设置；
 
-![PNP server](./pnp/pnpserver.png "microsoft server设置")
+![PNP server](./pnpserver.png "microsoft server设置")
 
 
 ### PnP 设备上线：Day-N template（可选）
