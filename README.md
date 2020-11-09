@@ -1,19 +1,21 @@
 ## PNP cheatsheet
 
+请结合参考链接中的资料，特别是“Network Device Onboarding for Cisco DNA Center Deployment Guide”，开始动手实践，如何通过DNAC实现交换机设备的零配置上线。
+
 - [PNP cheatsheet](#pnp-cheatsheet)
-  - [PnP 设备上线：零配置上线介绍 cheatsheet](#pnp-设备上线零配置上线介绍-cheatsheet)
+  - [PnP 设备上线：零配置上线介绍](#pnp-设备上线零配置上线介绍)
   - [PnP 设备上线：提前规划、准备工作](#pnp-设备上线提前规划准备工作)
   - [PnP 设备上线：网络环境准备-核心交换机的配置工作](#pnp-设备上线网络环境准备-核心交换机的配置工作)
   - [PnP 设备上线：DNAC 环境准备-提前完成SWIM 软件镜像管理设置](#pnp-设备上线dnac-环境准备-提前完成swim-软件镜像管理设置)
   - [PnP 设备上线：DNAC 环境准备- PnP template和Network Profile](#pnp-设备上线dnac-环境准备--pnp-template和network-profile)
-  - [PnP 设备上线：待上线Agent设备的出厂恢复](#pnp-设备上线待上线agent设备的出厂恢复)
+  - [PnP 设备上线：待上线Agent设备出厂模式的恢复](#pnp-设备上线待上线agent设备出厂模式的恢复)
   - [PnP 设备上线：上线过程观察](#pnp-设备上线上线过程观察)
-  - [PnP 设备上线：DNS上线（可选）](#pnp-设备上线dns上线可选)
+  - [PnP 设备上线：通过DNS上线（可选）](#pnp-设备上线通过dns上线可选)
   - [PnP 设备上线：Day-N template（可选）](#pnp-设备上线day-n-template可选)
   - [PnP 设备上线：参考链接](#pnp-设备上线参考链接)
   - [PnP 其他](#pnp-其他)
 
-### PnP 设备上线：零配置上线介绍 cheatsheet
+### PnP 设备上线：零配置上线介绍
 
 本手册主要适用于：通过 Cisco DNAC 产品解决思科交换机设备**零配置**上线问题。
 
@@ -42,7 +44,7 @@
     Would you like to enter the initial configuration dialog? [yes/no]:
     ```
 
-> **如果网络中已经部署DHCP**：设备启动过程中，可能已经通过网络中部署的DHCP 服务器获取到IP地址和对应的其他信息，请登陆至交换机设备检查IP、路由、以及所使用的端口信息。
+> **如果网络中已经部署DHCP**：设备启动过程中，可能已经通过网络中部署的DHCP 服务器获取到IP地址和对应的其他信息，请登陆至交换机设备检查IP、路由、以及所使用的端口信息；以及在DNAC unclaimed PNP表格中检查对应的设备状态。强烈建议按下述初始化脚本实现设备的**出厂配置恢复**。
 
 
 ### PnP 设备上线：网络环境准备-核心交换机的配置工作
@@ -69,10 +71,14 @@ ip dhcp pool PnP_device_vlan2
 ```
 
 > **IOS DHCP Server配置**：
->   - 如果在核心交换机上使用DHCP SERVER功能中，采用DHCP option 43方式实现PNP服务器地址的通知，则不需要配置domain-name、dns-server。
->   - 如果采用外部DHCP服务器，一般来说该服务器位于共享服务区，则不需要在设备上配置DHCP pool。
+>   - 如果在核心交换机上使用DHCP SERVER功能中，采用DHCP option 43方式实现PNP服务器地址的通知，则domain-name、dns-server的配置是可选的。
+>   - **注意 DHCP relay 功能**：如果采用外部DHCP服务器，一般来说该服务器位于共享服务区，则不需要在设备上配置DHCP pool。core 交换机设备的 SVI （vlan 2）端口下，需要配置 _dhcp relay_ 功能：ip helper-address 198.18.133.1（该地址198.18.133.1为DHCP SERVER地址）
+> 关于如何配置DHCP服务器 - [ Chapter: Configuring DHCP ](https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst9500/software/release/16-5/configuration_guide/sec/b_165_sec_9500_cg/configuring_dhcp.html)
 
-> **技术比较**：和使用在思科无线AP产品定位其无线控制器WLC的DHCP option 43方法，设置方法**很不同**。
+![DHCP server](./microsoft-server-dhcp-config.png "microsoft server设置")
+
+
+> **技术比较**：和使用在思科无线AP产品定位其无线控制器WLC的DHCP option 43方法（option 43 hex f104c6128164：F1代表思科无线，04为长度-字节数，之后为WLC IP地址），设置方法**很不同**：[ Wireless Controllers Option 43 Generator ](https://shimi.net/services/opt43/)
 
 - 核心交换机配置参考：配置 PnP VLAN，下述的例子中为 vlan 2，并配置其 SVI 接口 IP 地址，VLAN 3 管理网段的配置供参考。
 
@@ -87,6 +93,7 @@ vlan 2
 int vlan 2
  ip address 172.16.2.1 255.255.255.0
 
+! VLAN 3为网管网段
 vlan 3
  name switch-management-vlan-3
 !
@@ -118,11 +125,7 @@ router bgp 65003
   network 172.16.2.0 mask 255.255.255.0
   network 172.16.3.0 mask 255.255.255.0
 ```
-
-> **注意 DHCP relay 功能**：如果 DHCP 功能由外部服务器来提供，则 core 交换机设备的 SVI （vlan 2）端口下，需要配置 _dhcp relay_ 功能：ip helper-address 198.18.133.1（该地址为DHCP SERVER地址）
-> 请参考 [ Chapter: Configuring DHCP ](https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst9500/software/release/16-5/configuration_guide/sec/b_165_sec_9500_cg/configuring_dhcp.html)
-
-![DHCP server](./microsoft-server-dhcp-config.png "microsoft server设置")
+通过*ping dnac-ip-address source vlan 2/3*检查其互通性。
 
 
 ### PnP 设备上线：DNAC 环境准备-提前完成SWIM 软件镜像管理设置
@@ -148,7 +151,7 @@ DNAC 中需要完成的 SWIM 主要任务包括：
 
   - 管理 IP、VLAN 设置，本例子是 vlan 3 的配置；
   - 配置通过管理网段的默认路由，实现至 DNAC 的可达性；
-  - 修改 port-channel 端口的 vlan 许可；
+  - 修改 port-channel 端口的 vlan allow许可；
   - 修改与 DNAC 通讯所使用的端口为管理 vlan；
   - 删除临时 vlan 2 和 临时 SVI - interface vlan 2；
 
@@ -177,7 +180,7 @@ no int vlan 2
 > **Template Editor 模板工具使用说明**：
 >
 > - 紧跟 **\$** 符号之后，定义了模板中的参数名称：例子中*hostname*为 hostname 的参数，*ipaddress*为该设备的 vlan 3 的 IP 地址参数，2 个参数将在后续的 PnP claim 过程中被输入、赋值。
->   通过上述简单的模板，在设备 claim 中，只需要输入 hostname、管理 IP 地址即可实现设备的基础配置，并完成 DNAC 服务器远程管理配置。
+>   通过上述简单的模板，在设备 claim 中，只需要输入 hostname、管理 IP 地址即可实现设备的基础配置，并完成被 DNAC 纳管。
 > - **通过该模板中，上线设备在 claim 中将改变其 IP 地址，由最初的 vlan2 的 IP 地址，更改为 vlan3 的管理 IP 地址**；
 > - Template 设置完毕，需要保存、以及 commit，才能后续被使用。
 > - hostname 设置：在DNAC 1.3.3版本之后，在PNP table中已经可以提前完成hostname的设置，不需要在template中进行设置。
@@ -188,12 +191,12 @@ no int vlan 2
   - 在 _Day-N Template(s)_ 中的绑定使用于 day-N，也就是日常运维过程中配置下发，不在新设备上线过程中使用；
   - 完成 Network Profile定义之后，需要将其分配至site；
 
-- 检查在*Design* -> _Network Settings_ -> _Device Credentials_ 中，在对应的 site 里面配置了设备登陆使用的用户名、密码，以及 SNMP read/write 字串，该部分配置将在 claim 中推送至设备。
+- 检查在*Design* -> _Network Settings_ -> _Device Credentials_ 中，在对应的 site 里面配置了设备登陆使用的用户名、密码，以及 SNMP read/write 字串，该部分配置将在 claim 中被推送至设备。
 
 - 如果已经完成了思科ISE和DNAC的集成工作，交换机的设备信息也将在claim过程中被推送至ISE。
   
 
-### PnP 设备上线：待上线Agent设备的出厂恢复
+### PnP 设备上线：待上线Agent设备出厂模式的恢复
 
 PnP agent 设备，就是即将上线的交换机设备，如果上电之后设备处于下述的*出厂模式*，则可以跳过本步骤。
 
@@ -268,16 +271,16 @@ Switch>
 ```
 
 > **PnP agent 信息观察**：PNP成功启动，可以观察到：%PNP-6-PNP_DISCOVERY_DONE: PnP Discovery done successfully
-> 可以激活**EEM脚本**观察DNAC推送的配置信息，具体请参考下述步骤。
+> **此刻开始**，可以通过命令行界面激活**EEM脚本**观察DNAC推送的配置信息，具体请参考下述步骤。
 
 
-后续通过 DNAC 界面的 claim 交互 4 步操作中完成设备的上线，其中需要我们输入的信息为：hostname、和设备的管理IP。
+后续通过 DNAC 界面的 claim 交互操作中完成设备的上线，其中需要我们输入的信息为：hostname、和设备的管理IP。
 
 
 
-### PnP 设备上线：DNS上线（可选）
+### PnP 设备上线：通过DNS上线（可选）
 
-如果采用DNS上线方式，则我们在DHCP server中不需要设置option 43，但是需要在DHCP response信息中，提供DNS相关信息（domain name、DNS），并在DNS中设置好特定入口。
+如果采用DNS上线方式，则我们在DHCP server中不需要设置option 43，但是需要在DHCP response信息中，提供DNS相关信息（domain name、DNS地址），并在DNS服务器中设置好特定host入口。
 
 - **pnpserver**.local.domain 指向DNAC服务器IP；
 - local.domain按企业自身的具体设置；
@@ -289,9 +292,10 @@ Switch>
 
 ### PnP 设备上线：Day-N template（可选）
 
-如果需要使用DAY-N template工具实现后续的配置下发工作，则需要完成：
+DAY-N 配置模板，主要针对网络日常运维中的标准化配置下发，大量端口开通、配置变更等需求。
+如何使用DAY-N template工具实现后续的配置下发工作，需要完成步骤如下：
 
-- 登陆设备激活EEM脚本，可以观察到DNAC推送的具体配置信息；
+- 可以登陆设备激活EEM脚本，可以观察到DNAC推送的具体配置信息；
   
 ```
 event manager applet catchall
@@ -299,7 +303,7 @@ event cli pattern ".*" sync no skip no
 action 1 syslog msg "$_cli_msg"
 ```
 
-- DAY-N template设置，并在template中设置保存配置（由于DAY-N template 配置不自动保存，注意需要特别处理，也可以后续人工、自动化操作配置保存）：
+- DAY-N template设置，并在template中设置配置保存（由于DAY-N template 配置不自动保存，注意需要特别处理，也可以后续人工、自动化操作配置保存）：
 
 ```
 interface $interface
@@ -314,11 +318,14 @@ write memory
 #END_MODE_ENABLE
 ```
 > 配置保存还可以直接使用命令：do write memory、do copy running start来操作，这样就不需要添加“#MODE_ENABLE”、“#END_MODE_ENABLE”。
+> 上文中的配置，主要目的是：将上联端口加入至已有的port-channel端口中，来完成传统网络的搭建。
 
-- 在DAY-N template中，可以定义source to binding变量，该类变量数据将来自于DNAC已经学习到的数据；
+- 在DAY-N template中，可以定义source to binding变量，该类变量数据将来自于DNAC已经学习到的、已知的数据；
 - 修改design-> network profile中的对应的设备NP，并增加DAY-N template；
 - 使用provision流程工具完成DAY-N配置下发；
 
+> **DAY-N 模板注意点**：使用DAY-N模板，需要注意该模板在DNAC配置下发过程中，这些配置在目标设备中是逐条执行的，所以需要考虑配置不影响到DNAC和设备的互相访问。
+> 如果有访问中断可能，需要考虑其他实现方式，比如可以考虑设备中运行EEM的配置方法。
 
 
 ### PnP 设备上线：参考链接
