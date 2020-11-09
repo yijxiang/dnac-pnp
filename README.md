@@ -122,6 +122,8 @@ router bgp 65003
 > **注意 DHCP relay 功能**：如果 DHCP 功能由外部服务器来提供，则 core 交换机设备的 SVI （vlan 2）端口下，需要配置 _dhcp relay_ 功能：ip helper-address 198.18.133.1（该地址为DHCP SERVER地址）
 > 请参考 [ Chapter: Configuring DHCP ](https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst9500/software/release/16-5/configuration_guide/sec/b_165_sec_9500_cg/configuring_dhcp.html)
 
+![DHCP server](./microsoft-server-dhcp-config.png "microsoft DHCP server设置")
+
 ### PnP 设备上线：DNAC 环境准备-提前完成SWIM 软件镜像管理设置
 
 新设备上线过程中，如果在 DNAC 中完成配置 Campus Software Image Management - 简称为 SWIM，则可以为该设备自动进行 IOS 软件的升级工作。
