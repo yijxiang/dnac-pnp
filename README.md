@@ -52,7 +52,7 @@
 > - 请登陆至交换机设备检查IP、路由、以及所使用的端口信息；
 > - 在DHCP服务器中检查IP地址使用情况，是否和待上线设备信息一致；
 > - 在DNAC unclaimed PNP表格中检查对应的设备状态。
-> - 强烈建议按初始化脚本实现设备的**出厂配置**；
+> - 如果上述检查觉得有疑问，强烈建议大家按初始化脚本实现设备的**出厂配置**；
 
 
 ### PnP 设备上线：网络环境准备-核心交换机的配置工作
@@ -292,12 +292,14 @@ Switch>
 
 不管上线设备是交换机，还是无线AP产品，我们可以采用同一个vlan 2来上线设备，DHCP不设置option 43。在DNS中设置不同产品的不同host记录即可。
 
+下方截图是如何在*Microsoft DNS server*中设置pnpserver：
+
 - **pnpserver**.local.domain 指向DNAC服务器IP；
 - local.domain按企业自身的具体设置；
 
-> **技术比较**：使用在思科无线AP产品定位其无线控制器WLC的DNS方法，DNS中需要设置host：**CISCO-CAPWAP-CONTROLLER**
-
 ![PNP server](./pnpserver.png "microsoft server设置")
+
+> **技术比较**：使用在思科无线AP产品定位其无线控制器WLC的DNS方法，DNS中需要设置host：**CISCO-CAPWAP-CONTROLLER**
 
 
 ### PnP 设备上线：Day-N template（可选）
@@ -343,13 +345,14 @@ write memory
 
 - [ UP-TO-SPEED-ON-CISCO PDF文件 ](https://www.cisco.com/c/dam/global/da_dk/training-events/seminaria-materials/pdf/up-to-speed-on-cisco--dna_center.pdf)，更新日期：2020.04
 - [ Network Device Onboarding for Cisco DNA Center Deployment Guide PDF文件 ](https://www.cisco.com/c/dam/en/us/td/docs/solutions/CVD/Campus/dnac-network-device-onboarding-deployment-guide-2020jun.pdf)，更新日期：2020.06
+- [ DNAC手册：Create Templates to Automate Device Configuration Changes ](https://www.cisco.com/c/en/us/td/docs/cloud-systems-management/network-automation-and-management/dna-center/1-3/user_guide/b_cisco_dna_center_ug_1_3/b_cisco_dna_center_ug_1_3_chapter_0111.html)
+
 - [ Design Zone for Campus- Design Guides ](https://www.cisco.com/c/en/us/solutions/enterprise/design-zone-campus/design-guide-listing.html)
 - [ LAN Automation: Step-by-step deployment guide and Troubleshooting ](https://www.cisco.com/c/en/us/support/docs/cloud-systems-management/dna-center/215336-lan-automation-step-by-step-deployment.html)
 - [ DHCP option 43 如何设置 ](https://community.cisco.com/t5/cisco-digital-network/pnp-with-day-0-template/td-p/4011894)
 - [ 在DNAC中如何使用模板语言1 ](https://blogs.cisco.com/developer/velocity-templates-dnac-1)
 - [ 在DNAC中如何使用模板语言2 ](https://blogs.cisco.com/developer/velocity-templates-dnac-2)
 - [ 在github分享 DNAC-TEMPLATES ](https://github.com/kebaldwi/DNAC-TEMPLATES)
-- [ DNAC手册：Create Templates to Automate Device Configuration Changes ](https://www.cisco.com/c/en/us/td/docs/cloud-systems-management/network-automation-and-management/dna-center/1-3/user_guide/b_cisco_dna_center_ug_1_3/b_cisco_dna_center_ug_1_3_chapter_0111.html)
 
 ### PnP 其他
 
