@@ -146,12 +146,12 @@ DNAC 中需要完成的 SWIM 主要任务包括：
 
 > **SWIM 设置参考**：
 >
-> - 如果想知道如何使用 DNAC 中的 SWIM 功能，请参考： [ Campus Software Image Management Using Cisco DNA Center Deployment Guide ](https://www.cisco.com/c/dam/en/us/td/docs/solutions/CVD/Campus/dnac-swim-deployment-guide-2020mar.pdf)，
+> - 如果想知道如何使用 DNAC 中的 SWIM 功能，请参考： [ Campus Software Image Management Using Cisco DNA Center Deployment Guide PDF文件 ](https://www.cisco.com/c/dam/en/us/td/docs/solutions/CVD/Campus/dnac-swim-deployment-guide-2020mar.pdf)，
 > - SWIM golden image 在 DNAC 中的设置，主要通过 _design_ -> _Image Repository_ 来完成
 
 ### PnP 设备上线：DNAC 环境准备- PnP template和Network Profile
 
-根据参考链接中实施PnP的材料，在 DNAC 中完成 PnP 相关的配置工作，其任务主要包括：
+根据参考链接中实施 *PnP* 的材料，在 DNAC 中完成 PnP 相关的配置工作，其任务主要包括：
 
 - 在*Template Editor* -> _Onboarding Configuration_ 中**添加 template**；
 
@@ -195,9 +195,9 @@ no int vlan 2
 
 - 在*Design* -> _Network Profiles_ 中**添加 基于 switch 的 profile**，并绑定至一个 site 或者多个 sites
 
-  - 在 _OnBoarding Template(s)_ 中绑定的名称为上个步骤中的 template 名称；
+  - 在 _OnBoarding Template(s)_ 中绑定的名称为上个步骤中的 template 名称，该template可以增加多个；在实际的provision部署时，DNAC将提供**单选**选择框供大家选择，实际在部署中采用的具体template；
   - 在 _Day-N Template(s)_ 中的绑定使用于 day-N，也就是日常运维过程中配置下发，不在新设备上线过程中使用；
-  - 完成 Network Profile定义之后，需要将其分配至site；
+  - 完成 Network Profile定义之后，需要将其分配至site(s)；
 
 - 检查在*Design* -> _Network Settings_ -> _Device Credentials_ 中，在对应的 site 里面配置了设备登陆使用的用户名、密码，以及 SNMP read/write 字串，该部分配置将在 claim 中被推送至设备。
 
