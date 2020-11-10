@@ -1,16 +1,16 @@
-## PNP cheatsheet
+## DNAC PNP 实践 cheat sheet
 
 请结合参考链接中的资料，特别是“Network Device Onboarding for Cisco DNA Center Deployment Guide”，开始动手实践，如何通过DNAC实现交换机设备的零配置上线。
 
-- [PNP cheatsheet](#pnp-cheatsheet)
+- [DNAC PNP 实践 cheat sheet](#dnac-pnp-实践-cheat-sheet)
   - [PnP 设备上线：零配置上线介绍](#pnp-设备上线零配置上线介绍)
   - [PnP 设备上线：提前规划、准备工作](#pnp-设备上线提前规划准备工作)
   - [PnP 设备上线：网络环境准备-核心交换机的配置工作](#pnp-设备上线网络环境准备-核心交换机的配置工作)
   - [PnP 设备上线：DNAC 环境准备-提前完成SWIM 软件镜像管理设置](#pnp-设备上线dnac-环境准备-提前完成swim-软件镜像管理设置)
   - [PnP 设备上线：DNAC 环境准备- PnP template和Network Profile](#pnp-设备上线dnac-环境准备--pnp-template和network-profile)
-  - [PnP 设备上线：待上线Agent设备出厂模式的恢复](#pnp-设备上线待上线agent设备出厂模式的恢复)
+  - [PnP 设备上线：待上线Agent设备恢复出厂](#pnp-设备上线待上线agent设备恢复出厂)
   - [PnP 设备上线：上线过程观察](#pnp-设备上线上线过程观察)
-  - [PnP 设备上线：通过DNS上线（可选）](#pnp-设备上线通过dns上线可选)
+  - [PnP 设备上线：通过DNS上线（可选方式）](#pnp-设备上线通过dns上线可选方式)
   - [PnP 设备上线：Day-N template（可选）](#pnp-设备上线day-n-template可选)
   - [PnP 设备上线：参考链接](#pnp-设备上线参考链接)
   - [PnP 其他](#pnp-其他)
@@ -19,7 +19,10 @@
 
 本手册主要适用于：通过 Cisco DNAC 产品解决思科交换机设备**零配置**上线问题。
 
-- 需要新上线一批思科交换机设备（也支持其他种类的思科产品，但是所使用到的template需要自行确定）；
+- 思科DNAC架构中可以支持多种设备的零配置上线流程，其中较为常用的是如下2种：
+  - DHCP option 43方式，本手册中将主要介绍该实践流程；
+  - DNS *pnpserver* host A方式，本手册也简单介绍如何使用DNS的方法；
+- 需要新上线一批思科交换机设备（也支持其他种类的思科产品，但是所使用到的template有可能是不需要的，比如：sensor、AP产品等）；
 - 假设这些交换机拟部署在传统的网络架构中：
   - 运行传统的 spanning tree 协议；
   - 网络一般采用传统的 L2 运行模式，核心（或者边缘）交换机上配置 SVI 接口；
@@ -28,7 +31,8 @@
 - 在双核心的网络架构中，建议先启用一台核心交换机设备进行 PnP 上线流程，待所有接入层设备上线之后（上线成功标记：交换机通过 DHCP 获取地址，在 DNAC 的 PnP 界面中看到这些交换机，并通过 claim 完成PNP整个流程），使用 day-N template 工具进行后续的配置工作；
 - 通过本手册提供的步骤操作的话，接入层交换机设备将只有一根链路加入至 Port-channel 1 中，多根链路情况下，需要使用 day-N template 中增加其他的多链路至该 Port-channel 中；
 - 推荐提前在 DNAC 中配置、并使用 SWIM（软件镜像管理），这样可以实现设备上线同时，完成设备的软件升级工作；
-- PNP流程，可以提供后续Cisco DNA Center SDA架构所使用的*LAN automation、SDA FabricPEN* 节点上线参考；
+- 也可以提供后续Cisco DNA Center SDA架构所使用的*LAN automation、SDA FabricPEN* 节点上线参考；
+- 也可以作为思科无线AP产品、sensor产品上线参考：无线AP上线也可以通过PNP上线至DNAC而不是WLC，之后通过provision操作、进而帮助AP、WLC的互联互通；
 
 ### PnP 设备上线：提前规划、准备工作
 
@@ -44,7 +48,11 @@
     Would you like to enter the initial configuration dialog? [yes/no]:
     ```
 
-> **如果网络中已经部署DHCP**：设备启动过程中，可能已经通过网络中部署的DHCP 服务器获取到IP地址和对应的其他信息，请登陆至交换机设备检查IP、路由、以及所使用的端口信息；以及在DNAC unclaimed PNP表格中检查对应的设备状态。强烈建议按下述初始化脚本实现设备的**出厂配置恢复**。
+> **如果网络中已经部署DHCP**：设备启动过程中，可能已经通过网络中部署的DHCP 服务器获取到IP地址和对应的其他信息。
+> - 请登陆至交换机设备检查IP、路由、以及所使用的端口信息；
+> - 在DHCP服务器中检查IP地址使用情况，是否和待上线设备信息一致；
+> - 在DNAC unclaimed PNP表格中检查对应的设备状态。
+> - 强烈建议按初始化脚本实现设备的**出厂配置**；
 
 
 ### PnP 设备上线：网络环境准备-核心交换机的配置工作
@@ -143,7 +151,7 @@ DNAC 中需要完成的 SWIM 主要任务包括：
 
 ### PnP 设备上线：DNAC 环境准备- PnP template和Network Profile
 
-根据参考链接中实施 PnP 的材料，在 DNAC 中完成 PnP 相关的配置工作，其任务主要包括：
+根据参考链接中实施PnP的材料，在 DNAC 中完成 PnP 相关的配置工作，其任务主要包括：
 
 - 在*Template Editor* -> _Onboarding Configuration_ 中**添加 template**；
 
@@ -196,7 +204,7 @@ no int vlan 2
 - 如果已经完成了思科ISE和DNAC的集成工作，交换机的设备信息也将在claim过程中被推送至ISE。
   
 
-### PnP 设备上线：待上线Agent设备出厂模式的恢复
+### PnP 设备上线：待上线Agent设备恢复出厂
 
 PnP agent 设备，就是即将上线的交换机设备，如果上电之后设备处于下述的*出厂模式*，则可以跳过本步骤。
 
@@ -226,7 +234,7 @@ write erase     (回车确定)
 reload          (回答no)
 ```
 
-> **PnP agent 设备初始化方法**：具体请参考[ Network Plug and Play Troubleshooting Guide ](https://www.cisco.com/c/en/us/td/docs/cloud-systems-management/network-automation-and-management/dna-center/tech_notes/pnp-troubleshooting.html)
+> **PnP agent 设备初始化排障**：具体请参考[ Network Plug and Play Troubleshooting Guide ](https://www.cisco.com/c/en/us/td/docs/cloud-systems-management/network-automation-and-management/dna-center/tech_notes/pnp-troubleshooting.html)
 
 ### PnP 设备上线：上线过程观察
 
@@ -278,14 +286,16 @@ Switch>
 
 
 
-### PnP 设备上线：通过DNS上线（可选）
+### PnP 设备上线：通过DNS上线（可选方式）
 
 如果采用DNS上线方式，则我们在DHCP server中不需要设置option 43，但是需要在DHCP response信息中，提供DNS相关信息（domain name、DNS地址），并在DNS服务器中设置好特定host入口。
+
+不管上线设备是交换机，还是无线AP产品，我们可以采用同一个vlan 2来上线设备，DHCP不设置option 43。在DNS中设置不同产品的不同host记录即可。
 
 - **pnpserver**.local.domain 指向DNAC服务器IP；
 - local.domain按企业自身的具体设置；
 
-> **技术比较**：使用在思科无线AP产品定位其无线控制器WLC的DNS方法，DNS中需要设置**CISCO-CAPWAP-CONTROLLER**
+> **技术比较**：使用在思科无线AP产品定位其无线控制器WLC的DNS方法，DNS中需要设置host：**CISCO-CAPWAP-CONTROLLER**
 
 ![PNP server](./pnpserver.png "microsoft server设置")
 
@@ -295,15 +305,16 @@ Switch>
 DAY-N 配置模板，主要针对网络日常运维中的标准化配置下发，大量端口开通、配置变更等需求。
 如何使用DAY-N template工具实现后续的配置下发工作，需要完成步骤如下：
 
-- 可以登陆设备激活EEM脚本，可以观察到DNAC推送的具体配置信息；
+- 可以登陆设备激活EEM配置脚本，可以观察到DNAC推送的具体配置信息；
   
 ```
+conf t
 event manager applet catchall
 event cli pattern ".*" sync no skip no
 action 1 syslog msg "$_cli_msg"
 ```
 
-- DAY-N template设置，并在template中设置配置保存（由于DAY-N template 配置不自动保存，注意需要特别处理，也可以后续人工、自动化操作配置保存）：
+- DAY-N template设置，并在template 正文中设置配置保存（由于DAY-N template 配置不自动保存，注意需要特别处理，也可以后续人工、自动化操作配置保存）：
 
 ```
 interface $interface
@@ -317,7 +328,7 @@ interface $interface
 write memory
 #END_MODE_ENABLE
 ```
-> 配置保存还可以直接使用命令：do write memory、do copy running start来操作，这样就不需要添加“#MODE_ENABLE”、“#END_MODE_ENABLE”。
+> 配置保存还可以直接使用命令：do write memory、do copy running start等，这样就不需要添加“#MODE_ENABLE”、“#END_MODE_ENABLE”。
 > 上文中的配置，主要目的是：将上联端口加入至已有的port-channel端口中，来完成传统网络的搭建。
 
 - 在DAY-N template中，可以定义source to binding变量，该类变量数据将来自于DNAC已经学习到的、已知的数据；
@@ -325,18 +336,20 @@ write memory
 - 使用provision流程工具完成DAY-N配置下发；
 
 > **DAY-N 模板注意点**：使用DAY-N模板，需要注意该模板在DNAC配置下发过程中，这些配置在目标设备中是逐条执行的，所以需要考虑配置不影响到DNAC和设备的互相访问。
-> 如果有访问中断可能，需要考虑其他实现方式，比如可以考虑设备中运行EEM的配置方法。
+> 如果有访问中断可能，需要考虑其他实现方式，比如在设备中运行EEM脚本的配置方法。
 
 
 ### PnP 设备上线：参考链接
 
-- [ UP-TO-SPEED-ON-CISCO ](https://www.cisco.com/c/dam/global/da_dk/training-events/seminaria-materials/pdf/up-to-speed-on-cisco--dna_center.pdf)，更新日期：2020.04
-- [ Network Device Onboarding for Cisco DNA Center Deployment Guide ](https://www.cisco.com/c/dam/en/us/td/docs/solutions/CVD/Campus/dnac-network-device-onboarding-deployment-guide-2020jun.pdf)，更新日期：2020.06
+- [ UP-TO-SPEED-ON-CISCO PDF文件 ](https://www.cisco.com/c/dam/global/da_dk/training-events/seminaria-materials/pdf/up-to-speed-on-cisco--dna_center.pdf)，更新日期：2020.04
+- [ Network Device Onboarding for Cisco DNA Center Deployment Guide PDF文件 ](https://www.cisco.com/c/dam/en/us/td/docs/solutions/CVD/Campus/dnac-network-device-onboarding-deployment-guide-2020jun.pdf)，更新日期：2020.06
 - [ Design Zone for Campus- Design Guides ](https://www.cisco.com/c/en/us/solutions/enterprise/design-zone-campus/design-guide-listing.html)
 - [ LAN Automation: Step-by-step deployment guide and Troubleshooting ](https://www.cisco.com/c/en/us/support/docs/cloud-systems-management/dna-center/215336-lan-automation-step-by-step-deployment.html)
 - [ DHCP option 43 如何设置 ](https://community.cisco.com/t5/cisco-digital-network/pnp-with-day-0-template/td-p/4011894)
 - [ 在DNAC中如何使用模板语言1 ](https://blogs.cisco.com/developer/velocity-templates-dnac-1)
 - [ 在DNAC中如何使用模板语言2 ](https://blogs.cisco.com/developer/velocity-templates-dnac-2)
+- [ 在github分享 DNAC-TEMPLATES ](https://github.com/kebaldwi/DNAC-TEMPLATES)
+- [ DNAC手册：Create Templates to Automate Device Configuration Changes ](https://www.cisco.com/c/en/us/td/docs/cloud-systems-management/network-automation-and-management/dna-center/1-3/user_guide/b_cisco_dna_center_ug_1_3/b_cisco_dna_center_ug_1_3_chapter_0111.html)
 
 ### PnP 其他
 
